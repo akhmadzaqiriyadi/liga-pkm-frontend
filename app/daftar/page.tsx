@@ -9,6 +9,7 @@ import {
   LigaPKMRegistrationPayload,
 } from '@/src/services/ligaPkmService';
 import { FALLBACK_OPTIONS } from '@/src/data/fallbackOptions';
+import { RegistrationPayloadSchema } from '@/src/schemas/registrationSchema';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +76,7 @@ export default function DaftarPage() {
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
     namaKetua: '',
@@ -168,6 +170,8 @@ export default function DaftarPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
     const payload: LigaPKMRegistrationPayload = {
       namaKetua: form.namaKetua.trim(),
       npmKetua: form.npmKetua.trim(),
@@ -194,7 +198,22 @@ export default function DaftarPage() {
       dosenPendamping: form.dosenPendamping,
       deskripsiIde: form.deskripsiIde.trim(),
     };
-    mutation.mutate(payload);
+
+    // Zod strict validation: block character input in numeric fields & validate rules
+    const parseResult = RegistrationPayloadSchema.safeParse(payload);
+    if (!parseResult.success) {
+      const flat: Record<string, string> = {};
+      parseResult.error.issues.forEach((iss) => {
+        const key = String(iss.path[0] || 'form');
+        if (!flat[key]) flat[key] = iss.message;
+      });
+      setFieldErrors(flat);
+      setError(parseResult.error.issues[0]?.message || 'Data pendaftaran belum valid');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    mutation.mutate(parseResult.data as LigaPKMRegistrationPayload);
   };
 
   const ketuaComplete =
@@ -340,13 +359,26 @@ export default function DaftarPage() {
                       </Label>
                       <Input
                         id="npmKetua"
-                        className="h-10 bg-background font-mono"
-                        placeholder="Minimal 8 digit"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className={`h-10 bg-background font-mono ${fieldErrors.npmKetua ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
+                        placeholder="Minimal 8 digit (angka)"
                         required
                         minLength={8}
+                        maxLength={15}
                         value={form.npmKetua}
-                        onChange={(e) => setField('npmKetua', e.target.value)}
+                        onChange={(e) => {
+                          const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                          setField('npmKetua', sanitized);
+                          if (fieldErrors.npmKetua) {
+                            setFieldErrors((prev) => ({ ...prev, npmKetua: '' }));
+                          }
+                        }}
                       />
+                      {fieldErrors.npmKetua && (
+                        <p className="text-xs text-rose-500 font-medium">{fieldErrors.npmKetua}</p>
+                      )}
                     </div>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -377,12 +409,28 @@ export default function DaftarPage() {
                       </Label>
                       <Input
                         id="waKetua"
-                        className="h-10 bg-background font-mono"
-                        placeholder="081234567890"
+                        type="tel"
+                        inputMode="tel"
+                        className={`h-10 bg-background font-mono ${fieldErrors.noWhatsappKetua ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
+                        placeholder="081234567890 atau +628..."
                         required
                         value={form.noWhatsappKetua}
-                        onChange={(e) => setField('noWhatsappKetua', e.target.value)}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val.startsWith('+')) {
+                            val = '+' + val.slice(1).replace(/[^0-9]/g, '');
+                          } else {
+                            val = val.replace(/[^0-9]/g, '');
+                          }
+                          setField('noWhatsappKetua', val);
+                          if (fieldErrors.noWhatsappKetua) {
+                            setFieldErrors((prev) => ({ ...prev, noWhatsappKetua: '' }));
+                          }
+                        }}
                       />
+                      {fieldErrors.noWhatsappKetua && (
+                        <p className="text-xs text-rose-500 font-medium">{fieldErrors.noWhatsappKetua}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -446,12 +494,27 @@ export default function DaftarPage() {
                             NPM{i < 3 && <RequiredMark />}
                           </Label>
                           <Input
-                            className="h-9 bg-card font-mono"
-                            placeholder="NPM"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className={`h-9 bg-card font-mono ${fieldErrors[`npmAnggota${i + 1}`] ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
+                            placeholder="NPM (angka)"
                             required={i < 3}
+                            maxLength={15}
                             value={form.anggota[i].npm}
-                            onChange={(e) => setAnggota(i, 'npm', e.target.value)}
+                            onChange={(e) => {
+                              const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                              setAnggota(i, 'npm', sanitized);
+                              if (fieldErrors[`npmAnggota${i + 1}`]) {
+                                setFieldErrors((prev) => ({ ...prev, [`npmAnggota${i + 1}`]: '' }));
+                              }
+                            }}
                           />
+                          {fieldErrors[`npmAnggota${i + 1}`] && (
+                            <p className="text-xs text-rose-500 font-medium mt-1">
+                              {fieldErrors[`npmAnggota${i + 1}`]}
+                            </p>
+                          )}
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-xs">

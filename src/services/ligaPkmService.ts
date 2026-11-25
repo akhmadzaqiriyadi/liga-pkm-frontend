@@ -72,7 +72,7 @@ export async function submitRegistration(payload: LigaPKMRegistrationPayload) {
     body: JSON.stringify(payload),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || 'Gagal mengirim pendaftaran');
+  if (!res.ok) throw new Error(data?.message || data?.error?.message || 'Gagal mengirim pendaftaran');
   return data;
 }
 

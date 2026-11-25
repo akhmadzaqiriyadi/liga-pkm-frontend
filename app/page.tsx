@@ -141,7 +141,7 @@ export default function LandingPage() {
                     size="lg"
                     className="w-full sm:w-auto h-11 px-7 text-sm font-semibold bg-[#2aa8e8] text-[#051d40] hover:bg-sky-300 shadow-md shadow-sky-500/20 transition-all hover:scale-105 active:scale-95"
                   >
-                    Daftarkan Tim Sekarang 🚀
+                    Daftarkan Tim Sekarang
                   </Button>
                 </Link>
                 <a href="#ketentuan" className="w-full sm:w-auto">
@@ -372,7 +372,7 @@ export default function LandingPage() {
                 size="lg"
                 className="h-11 px-8 text-sm font-semibold bg-white text-[#0a4da2] hover:bg-sky-50 shadow-lg shadow-sky-950/20 transition-all hover:scale-105 active:scale-95"
               >
-                Mulai Pendaftaran 🚀
+                Mulai Pendaftaran
               </Button>
             </Link>
           </div>
