@@ -5,15 +5,15 @@ import Image from 'next/image';
 
 const BANNERS = [
   {
-    src: '/images/banner1.png',
+    src: '/images/banner1.webp',
     alt: 'Latar belakang Banner Liga PKM UTY 2026 - 1',
   },
   {
-    src: '/images/banner2.png',
+    src: '/images/banner2.webp',
     alt: 'Latar belakang Banner Liga PKM UTY 2026 - 2',
   },
   {
-    src: '/images/banner3.png',
+    src: '/images/banner3.webp',
     alt: 'Latar belakang Banner Liga PKM UTY 2026 - 3',
   },
 ];
