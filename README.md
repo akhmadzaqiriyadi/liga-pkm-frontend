@@ -33,16 +33,21 @@ X-PKM-SECRET: ligapkm-uty-secret-2026
 
 ## 🛠️ Panduan Memulai (Development)
 
-Rekomendasi package manager: **Bun** (atau npm / pnpm / yarn).
+Rekomendasi package manager: **Bun** (`bun`).
 
 ```bash
 # Clone repository
 git clone https://github.com/akhmadzaqiriyadi/liga-pkm-frontend.git
 cd liga-pkm-frontend
 
-# Install dependencies
+# Install dependencies dengan Bun
 bun install
+
+# Setup Environment (.env.local)
+cp .env.example .env.local
 
 # Jalankan dev server
 bun run dev
 ```
+
+Server lokal akan berjalan di `http://localhost:3000`.
