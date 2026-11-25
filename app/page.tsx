@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/BrandLogo';
 import { LandingHeader } from '@/components/LandingHeader';
+import { HeroBannerBackground } from '@/components/HeroBannerSlideshow';
+import { GsapPageScope } from '@/components/GsapMotion';
 
 const ALUR_STEPS = [
   {
@@ -99,115 +101,114 @@ const BIDANG_PKM = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <GsapPageScope className="min-h-screen bg-background text-foreground flex flex-col">
       <LandingHeader />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="border-b border-border">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16 md:py-24">
-            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-              {/* Left Editorial Copy */}
-              <div className="lg:col-span-7 space-y-5 sm:space-y-6">
-                <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                  Universitas Teknologi Yogyakarta
-                </p>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-[1.15]">
-                  Portal Pendaftaran Resmi Liga PKM UTY 2026
-                </h1>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl">
-                  Wadah seleksi dan pembinaan Program Kreativitas Mahasiswa tingkat universitas.
-                  Daftarkan tim lintas program studi, pilih bidang PKM, dan ajukan gagasan
-                  terbaikmu bersama dosen pendamping.
-                </p>
-                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 pt-2">
-                  <Link href="/daftar" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      className="w-full sm:w-auto h-11 px-6 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#083d82]"
-                    >
-                      Daftarkan Tim Sekarang
-                    </Button>
-                  </Link>
-                  <a href="#ketentuan" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="w-full sm:w-auto h-11 px-6 text-sm font-medium bg-card hover:bg-secondary"
-                    >
-                      Baca Ketentuan Tim
-                    </Button>
-                  </a>
-                </div>
+        {/* Hero Section with Background Slideshow */}
+        <section className="relative overflow-hidden border-b border-border bg-[#051d40] text-white">
+          <HeroBannerBackground />
+
+          <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 md:py-28">
+            <div className="mx-auto max-w-3xl text-center flex flex-col items-center space-y-5 sm:space-y-6">
+              <p
+                data-gsap="hero-item"
+                className="text-xs font-semibold uppercase tracking-widest text-[#2aa8e8] drop-shadow-sm"
+              >
+                Universitas Teknologi Yogyakarta
+              </p>
+              <h1
+                data-gsap="hero-item"
+                className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.15] drop-shadow-sm"
+              >
+                Portal Pendaftaran Resmi Liga PKM UTY 2026
+              </h1>
+              <p
+                data-gsap="hero-item"
+                className="text-base sm:text-lg text-slate-100 leading-relaxed max-w-2xl drop-shadow-sm"
+              >
+                Wadah seleksi dan pembinaan Program Kreativitas Mahasiswa tingkat universitas.
+                Daftarkan tim lintas program studi, pilih bidang PKM, dan ajukan gagasan
+                terbaikmu bersama dosen pendamping.
+              </p>
+
+              <div
+                data-gsap="hero-item"
+                className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3 pt-2 w-full sm:w-auto"
+              >
+                <Link href="/daftar" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto h-11 px-6 text-sm font-semibold bg-[#2aa8e8] text-[#051d40] hover:bg-sky-300 transition-transform active:scale-95"
+                  >
+                    Daftarkan Tim Sekarang
+                  </Button>
+                </Link>
+                <a href="#ketentuan" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto h-11 px-6 text-sm font-medium bg-white/15 text-white border-white/30 hover:bg-white/25 hover:text-white backdrop-blur-xs transition-transform active:scale-95"
+                  >
+                    Baca Ketentuan Tim
+                  </Button>
+                </a>
               </div>
 
-              {/* Right Structured Fact Sheet */}
-              <div className="lg:col-span-5 bg-card border border-border rounded-lg overflow-hidden shadow-xs">
-                <div className="h-1.5 bg-gradient-to-r from-[#0a4da2] to-[#2aa8e8]" />
-                <div className="p-6 space-y-6">
-                  <div>
-                    <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                      Ringkasan Skema 2026
-                    </p>
-                    <h2 className="text-lg font-semibold text-foreground mt-1">
-                      Kapasitas & Parameter Kompetisi
-                    </h2>
-                  </div>
+              {/* Inline Counting Stats */}
+              <div
+                data-gsap="hero-item"
+                className="pt-6 mt-6 w-full border-t border-white/20 flex flex-wrap items-baseline justify-center gap-x-8 gap-y-4"
+              >
+                <div className="flex items-baseline gap-2">
+                  <span
+                    data-gsap="count"
+                    data-target="24"
+                    className="font-mono text-2xl sm:text-3xl font-bold text-white tabular-nums drop-shadow-sm"
+                  >
+                    24
+                  </span>
+                  <span className="text-xs sm:text-sm text-sky-100/95 drop-shadow-sm">
+                    Program Studi UTY
+                  </span>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-4 py-4 border-y border-border">
-                    <div>
-                      <div className="font-mono text-2xl font-bold text-foreground tabular-nums">
-                        24
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Program Studi UTY
-                      </div>
-                    </div>
-                    <div>
-                      <div className="font-mono text-2xl font-bold text-foreground tabular-nums">
-                        10
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Bidang Skema PKM
-                      </div>
-                    </div>
-                    <div>
-                      <div className="font-mono text-2xl font-bold text-foreground tabular-nums">
-                        31
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Dosen Pendamping
-                      </div>
-                    </div>
-                    <div>
-                      <div className="font-mono text-2xl font-bold text-foreground tabular-nums">
-                        4–6
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Mahasiswa per Tim
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-baseline gap-2">
+                  <span
+                    data-gsap="count"
+                    data-target="10"
+                    className="font-mono text-2xl sm:text-3xl font-bold text-white tabular-nums drop-shadow-sm"
+                  >
+                    10
+                  </span>
+                  <span className="text-xs sm:text-sm text-sky-100/95 drop-shadow-sm">
+                    Bidang Skema PKM
+                  </span>
+                </div>
 
-                  <div className="space-y-2.5 text-sm">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Persiapan Sebelum Mendaftar
-                    </p>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-baseline gap-2.5">
-                        <span className="font-mono text-xs text-primary font-semibold">01</span>
-                        <span>Data lengkap Ketua dan 3–5 Anggota (Nama, NPM, Prodi)</span>
-                      </li>
-                      <li className="flex items-baseline gap-2.5">
-                        <span className="font-mono text-xs text-primary font-semibold">02</span>
-                        <span>Judul usulan, bidang PKM, dan target SDGs</span>
-                      </li>
-                      <li className="flex items-baseline gap-2.5">
-                        <span className="font-mono text-xs text-primary font-semibold">03</span>
-                        <span>Ringkasan latar belakang masalah & solusi tim</span>
-                      </li>
-                    </ul>
-                  </div>
+                <div className="flex items-baseline gap-2">
+                  <span
+                    data-gsap="count"
+                    data-target="31"
+                    className="font-mono text-2xl sm:text-3xl font-bold text-white tabular-nums drop-shadow-sm"
+                  >
+                    31
+                  </span>
+                  <span className="text-xs sm:text-sm text-sky-100/95 drop-shadow-sm">
+                    Dosen Pendamping
+                  </span>
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="font-mono text-2xl sm:text-3xl font-bold text-white tabular-nums drop-shadow-sm">
+                    4–
+                    <span data-gsap="count" data-target="6">
+                      6
+                    </span>
+                  </span>
+                  <span className="text-xs sm:text-sm text-sky-100/95 drop-shadow-sm">
+                    Mahasiswa per Tim
+                  </span>
                 </div>
               </div>
             </div>
@@ -372,6 +373,6 @@ export default function LandingPage() {
           <span className="font-mono text-sky-200/70">Tahun Akademik 2026</span>
         </div>
       </footer>
-    </div>
+    </GsapPageScope>
   );
 }
