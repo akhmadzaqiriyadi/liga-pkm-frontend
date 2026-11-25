@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { FALLBACK_OPTIONS } from '@/src/data/fallbackOptions';
 
 const BASE_URL =
   process.env.API_URL ||
@@ -9,30 +10,32 @@ export async function GET() {
   try {
     const res = await fetch(`${BASE_URL}/options`, {
       cache: 'no-store',
+      signal: AbortSignal.timeout(4000),
     });
 
     const contentType = res.headers.get('content-type') || '';
 
     if (res.status === 468 || contentType.includes('text/html')) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Server API (${BASE_URL}) mengembalikan HTTP ${res.status} (SafeLine WAF challenge). Endpoint /api/v1/liga-pkm/* perlu di-whitelist di WAF atau gunakan URL internal/lokal.`,
-        },
-        { status: 502 }
-      );
+      // Fallback to local static options if blocked by WAF challenge
+      return NextResponse.json({
+        success: true,
+        data: FALLBACK_OPTIONS,
+        source: 'fallback_waf',
+        message: 'Menggunakan master opsi cadangan (WAF challenge terdeteksi).',
+      });
     }
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch {
-    return NextResponse.json(
-      {
-        success: false,
-        message: `Tidak dapat terhubung ke server API (${BASE_URL}).`,
-      },
-      { status: 502 }
-    );
+    // Fallback to local static options if offline / connection error
+    return NextResponse.json({
+      success: true,
+      data: FALLBACK_OPTIONS,
+      source: 'fallback_offline',
+      message: 'Menggunakan master opsi cadangan (Server upstream belum dapat dihubungi).',
+    });
   }
 }
+
 
