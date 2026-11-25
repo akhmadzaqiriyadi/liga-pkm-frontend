@@ -31,7 +31,11 @@ export function HeroBannerBackground() {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden bg-[#051d40]" aria-hidden="true">
+    <div
+      data-gsap="hero-parallax"
+      className="absolute inset-0 z-0 overflow-hidden bg-[#051d40]"
+      aria-hidden="true"
+    >
       {BANNERS.map((banner, idx) => {
         const isActive = idx === activeIndex;
         return (

@@ -112,19 +112,19 @@ export default function LandingPage() {
           <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20 md:py-28">
             <div className="mx-auto max-w-3xl text-center flex flex-col items-center space-y-5 sm:space-y-6">
               <p
-                data-gsap="hero-item"
-                className="text-xs font-semibold uppercase tracking-widest text-[#2aa8e8] drop-shadow-sm"
+                data-gsap="hero-badge"
+                className="text-xs font-semibold uppercase tracking-widest text-[#2aa8e8] bg-sky-950/60 border border-sky-400/20 px-3.5 py-1 rounded-full backdrop-blur-xs drop-shadow-sm"
               >
                 Universitas Teknologi Yogyakarta
               </p>
               <h1
-                data-gsap="hero-item"
+                data-gsap="hero-title"
                 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.15] drop-shadow-sm"
               >
                 Portal Pendaftaran Resmi Liga PKM UTY 2026
               </h1>
               <p
-                data-gsap="hero-item"
+                data-gsap="hero-desc"
                 className="text-base sm:text-lg text-slate-100 leading-relaxed max-w-2xl drop-shadow-sm"
               >
                 Wadah seleksi dan pembinaan Program Kreativitas Mahasiswa tingkat universitas.
@@ -133,22 +133,23 @@ export default function LandingPage() {
               </p>
 
               <div
-                data-gsap="hero-item"
                 className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3 pt-2 w-full sm:w-auto"
               >
                 <Link href="/daftar" className="w-full sm:w-auto">
                   <Button
+                    data-gsap="hero-cta"
                     size="lg"
-                    className="w-full sm:w-auto h-11 px-6 text-sm font-semibold bg-[#2aa8e8] text-[#051d40] hover:bg-sky-300 transition-transform active:scale-95"
+                    className="w-full sm:w-auto h-11 px-7 text-sm font-semibold bg-[#2aa8e8] text-[#051d40] hover:bg-sky-300 shadow-md shadow-sky-500/20 transition-all hover:scale-105 active:scale-95"
                   >
-                    Daftarkan Tim Sekarang
+                    Daftarkan Tim Sekarang 🚀
                   </Button>
                 </Link>
                 <a href="#ketentuan" className="w-full sm:w-auto">
                   <Button
+                    data-gsap="hero-cta"
                     size="lg"
                     variant="outline"
-                    className="w-full sm:w-auto h-11 px-6 text-sm font-medium bg-white/15 text-white border-white/30 hover:bg-white/25 hover:text-white backdrop-blur-xs transition-transform active:scale-95"
+                    className="w-full sm:w-auto h-11 px-6 text-sm font-medium bg-white/15 text-white border-white/30 hover:bg-white/25 hover:text-white backdrop-blur-xs transition-all hover:scale-105 active:scale-95"
                   >
                     Baca Ketentuan Tim
                   </Button>
@@ -157,7 +158,7 @@ export default function LandingPage() {
 
               {/* Inline Counting Stats */}
               <div
-                data-gsap="hero-item"
+                data-gsap="hero-stats"
                 className="pt-6 mt-6 w-full border-t border-white/20 flex flex-wrap items-baseline justify-center gap-x-8 gap-y-4"
               >
                 <div className="flex items-baseline gap-2">
@@ -218,7 +219,7 @@ export default function LandingPage() {
         {/* Section 01: Alur Pendaftaran */}
         <section id="alur" className="scroll-mt-16 border-b border-border bg-card">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 md:py-20">
-            <div className="max-w-xl mb-12">
+            <div data-gsap="section-heading" className="max-w-xl mb-12">
               <p className="font-mono text-xs font-medium uppercase tracking-wider text-primary mb-2">
                 01 / Alur Pendaftaran
               </p>
@@ -227,10 +228,17 @@ export default function LandingPage() {
               </h2>
             </div>
 
-            <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border border border-border rounded-lg bg-background">
+            <div
+              data-gsap="alur-group"
+              className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border border border-border rounded-lg bg-background overflow-hidden shadow-xs"
+            >
               {ALUR_STEPS.map((item) => (
-                <div key={item.step} className="p-6 sm:p-8 space-y-3">
-                  <span className="font-mono text-xs font-semibold text-primary">
+                <div
+                  key={item.step}
+                  data-gsap="alur-card"
+                  className="p-6 sm:p-8 space-y-3 gsap-hover-card transition-colors hover:bg-accent/40"
+                >
+                  <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
                     TAHAP {item.step}
                   </span>
                   <h3 className="text-lg font-semibold text-foreground">
@@ -249,7 +257,7 @@ export default function LandingPage() {
         <section id="ketentuan" className="scroll-mt-16 border-b border-border">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 md:py-20">
             <div className="grid lg:grid-cols-12 gap-10">
-              <div className="lg:col-span-4 space-y-3">
+              <div data-gsap="ketentuan-left" className="lg:col-span-4 space-y-3">
                 <p className="font-mono text-xs font-medium uppercase tracking-wider text-primary">
                   02 / Ketentuan Tim
                 </p>
@@ -262,11 +270,12 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div className="lg:col-span-8 bg-card border border-border rounded-lg divide-y divide-border">
+              <div className="lg:col-span-8 bg-card border border-border rounded-lg divide-y divide-border overflow-hidden shadow-xs">
                 {KETENTUAN_LIST.map((item) => (
                   <div
                     key={item.label}
-                    className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+                    data-gsap="ketentuan-item"
+                    className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-start justify-between gap-3 gsap-hover-card transition-colors hover:bg-accent/30"
                   >
                     <div className="space-y-1.5 max-w-xl">
                       <div className="flex items-center gap-2.5">
@@ -297,7 +306,10 @@ export default function LandingPage() {
         {/* Section 03: 10 Bidang PKM Directory */}
         <section id="bidang" className="scroll-mt-16 border-b border-border bg-card">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 md:py-20">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div
+              data-gsap="section-heading"
+              className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10"
+            >
               <div>
                 <p className="font-mono text-xs font-medium uppercase tracking-wider text-primary mb-2">
                   03 / Skema Kompetisi
@@ -311,13 +323,14 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div data-gsap="bidang-grid" className="grid md:grid-cols-2 gap-4">
               {BIDANG_PKM.map((b, idx) => (
                 <div
                   key={b.name}
-                  className="p-5 rounded-lg border border-border bg-background hover:border-primary/40 transition-colors flex items-start gap-4"
+                  data-gsap="bidang-card"
+                  className="p-5 rounded-lg border border-border bg-background hover:border-primary/50 gsap-hover-card transition-all flex items-start gap-4 shadow-xs"
                 >
-                  <span className="font-mono text-xs font-semibold text-muted-foreground pt-0.5 shrink-0">
+                  <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded shrink-0">
                     {String(idx + 1).padStart(2, '0')}
                   </span>
                   <div className="space-y-1">
@@ -325,7 +338,7 @@ export default function LandingPage() {
                       <h3 className="text-base font-semibold text-foreground">
                         {b.name}
                       </h3>
-                      <span className="font-mono text-[11px] text-primary bg-accent px-1.5 py-0.5 rounded">
+                      <span className="font-mono text-[11px] font-semibold text-primary bg-accent px-1.5 py-0.5 rounded border border-primary/20">
                         {b.code}
                       </span>
                     </div>
@@ -341,7 +354,10 @@ export default function LandingPage() {
 
         {/* Bottom CTA */}
         <section className="bg-[#072b5c] text-white">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div
+            data-gsap="cta-box"
+            className="mx-auto max-w-6xl px-4 sm:px-6 py-16 flex flex-col md:flex-row md:items-center md:justify-between gap-6"
+          >
             <div className="space-y-2 max-w-xl">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
                 Siap Mengajukan Gagasan Tim?
@@ -354,9 +370,9 @@ export default function LandingPage() {
             <Link href="/daftar">
               <Button
                 size="lg"
-                className="h-11 px-7 text-sm font-semibold bg-white text-[#0a4da2] hover:bg-sky-50"
+                className="h-11 px-8 text-sm font-semibold bg-white text-[#0a4da2] hover:bg-sky-50 shadow-lg shadow-sky-950/20 transition-all hover:scale-105 active:scale-95"
               >
-                Mulai Pendaftaran
+                Mulai Pendaftaran 🚀
               </Button>
             </Link>
           </div>
@@ -364,7 +380,10 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#051d40] text-slate-300 border-t border-[#0f356b] py-6 text-xs sm:text-sm">
+      <footer
+        data-gsap="footer"
+        className="bg-[#051d40] text-slate-300 border-t border-[#0f356b] py-6 text-xs sm:text-sm"
+      >
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-2.5">
             <BrandLogo size={26} className="border-white/20" />
