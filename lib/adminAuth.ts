@@ -2,7 +2,12 @@ export const ADMIN_COOKIE_NAME = 'pkm_admin_session';
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 jam
 
 function getSigningSecret(): string {
-  return process.env.PKM_SECRET || 'fallback-dev-secret';
+  return (
+    process.env.PKM_SECRET ||
+    process.env.ADMIN_PASSWORD ||
+    process.env.ADMIN_SECRET_KEY ||
+    'ligapkm-uty-secret-2026'
+  );
 }
 
 function toBase64Url(bytes: Uint8Array): string {
