@@ -56,6 +56,12 @@ export function LandingHeader() {
               {item.label}
             </button>
           ))}
+          <Link
+            href="/cek-pendaftaran"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cek Status
+          </Link>
           <Link href="/daftar">
             <Button className="h-9 px-4 bg-primary text-primary-foreground hover:bg-[#083d82] font-medium">
               Daftar Tim
@@ -94,6 +100,13 @@ export function LandingHeader() {
               {item.label}
             </button>
           ))}
+          <Link
+            href="/cek-pendaftaran"
+            onClick={() => setMobileOpen(false)}
+            className="block w-full text-left px-3 py-2.5 rounded-md text-sm font-medium text-primary hover:bg-secondary transition-colors"
+          >
+            Cek Status Pendaftaran
+          </Link>
         </div>
       )}
     </header>
