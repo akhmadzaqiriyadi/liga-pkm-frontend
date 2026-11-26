@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  buildAppsScriptUrl,
+  getBackendSecret,
+  normalizeSubmission,
+  parseUpstreamJson,
+} from '@/lib/backendApi';
 
-const BASE_URL =
-  process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://kreanovasi.uty.ac.id/api/v1/liga-pkm';
-
-const SECRET =
-  process.env.PKM_SECRET ||
-  process.env.ADMIN_PASSWORD ||
-  process.env.ADMIN_SECRET_KEY ||
-  'ligapkm-uty-secret-2026';
+interface DetailResponse {
+  success?: boolean;
+  status_code?: number;
+  message?: string;
+  data?: Record<string, unknown>;
+}
 
 export async function GET(
   _: NextRequest,
@@ -17,13 +19,32 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const res = await fetch(`${BASE_URL}/submissions/${id}`, {
-      headers: { 'X-PKM-SECRET': SECRET },
-      signal: AbortSignal.timeout(5000),
+    const url = buildAppsScriptUrl('submission_detail', {
+      secret: getBackendSecret(),
+      id,
+    });
+
+    const res = await fetch(url, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(8000),
       cache: 'no-store',
     });
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+
+    const parsed = await parseUpstreamJson<DetailResponse>(res);
+    if (!parsed.ok) {
+      return NextResponse.json({ success: false, message: parsed.error }, { status: 502 });
+    }
+
+    const data = parsed.data;
+    if (!data?.success) {
+      return NextResponse.json(data, { status: data?.status_code || 404 });
+    }
+
+    if (data?.data && typeof data.data === 'object') {
+      data.data = normalizeSubmission(data.data);
+    }
+
+    return NextResponse.json(data, { status: data?.status_code || 200 });
   } catch {
     return NextResponse.json(
       { success: false, message: 'Gagal mengambil detail submission dari server backend.' },

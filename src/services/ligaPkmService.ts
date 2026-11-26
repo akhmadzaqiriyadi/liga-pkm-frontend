@@ -46,6 +46,26 @@ export interface Submission {
   createdAt: string;
 }
 
+export interface SubmissionDetail extends Submission {
+  skemaSdgs?: string;
+  deskripsiIde?: string;
+  namaAnggota1?: string;
+  npmAnggota1?: string;
+  prodiAnggota1?: string;
+  namaAnggota2?: string;
+  npmAnggota2?: string;
+  prodiAnggota2?: string;
+  namaAnggota3?: string;
+  npmAnggota3?: string;
+  prodiAnggota3?: string;
+  namaAnggota4?: string;
+  npmAnggota4?: string;
+  prodiAnggota4?: string;
+  namaAnggota5?: string;
+  npmAnggota5?: string;
+  prodiAnggota5?: string;
+}
+
 export interface SubmissionsResponse {
   success: boolean;
   data: {
@@ -73,6 +93,15 @@ export async function submitRegistration(payload: LigaPKMRegistrationPayload) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || data?.error?.message || 'Gagal mengirim pendaftaran');
+  return data;
+}
+
+export async function trackRegistrationById(id: string): Promise<{ success: boolean; data: SubmissionDetail }> {
+  const res = await fetch(`/api/liga-pkm/track?id=${encodeURIComponent(id.trim())}`);
+  const data = await res.json();
+  if (!res.ok || !data?.success) {
+    throw new Error(data?.message || 'Data pendaftaran dengan ID tersebut tidak ditemukan');
+  }
   return data;
 }
 

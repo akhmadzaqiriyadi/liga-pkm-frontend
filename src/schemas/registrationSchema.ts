@@ -195,6 +195,25 @@ export const RegistrationPayloadSchema = z
         });
       }
     }
+
+    const npms = [
+      data.npmKetua,
+      data.npmAnggota1,
+      data.npmAnggota2,
+      data.npmAnggota3,
+      data.npmAnggota4,
+      data.npmAnggota5,
+    ]
+      .map((v) => (v ? v.trim() : ''))
+      .filter(Boolean);
+
+    if (new Set(npms).size !== npms.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'NPM Ketua dan setiap Anggota dalam satu tim harus berbeda',
+        path: ['npmKetua'],
+      });
+    }
   });
 
 export type RegistrationPayload = z.infer<typeof RegistrationPayloadSchema>;

@@ -67,14 +67,22 @@ export default async function SuksesPage({
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            {id ? (
+              <Link href={`/cek-pendaftaran?id=${encodeURIComponent(id)}`} className="flex-1">
+                <Button className="w-full h-10 bg-primary text-primary-foreground hover:bg-[#083d82]">
+                  Lihat Data & Status Tim
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/cek-pendaftaran" className="flex-1">
+                <Button className="w-full h-10 bg-primary text-primary-foreground hover:bg-[#083d82]">
+                  Cek Status Pendaftaran
+                </Button>
+              </Link>
+            )}
             <Link href="/" className="flex-1">
-              <Button className="w-full h-10 bg-primary text-primary-foreground hover:bg-[#083d82]">
-                Kembali ke Beranda
-              </Button>
-            </Link>
-            <Link href="/daftar" className="flex-1">
               <Button variant="outline" className="w-full h-10">
-                Daftarkan Tim Lain
+                Kembali ke Beranda
               </Button>
             </Link>
           </div>

@@ -1,34 +1,53 @@
 import { NextResponse } from 'next/server';
 import { FALLBACK_OPTIONS } from '@/src/data/fallbackOptions';
+import { buildAppsScriptUrl, parseUpstreamJson } from '@/lib/backendApi';
 
-const BASE_URL =
-  process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://kreanovasi.uty.ac.id/api/v1/liga-pkm';
+interface UpstreamOptionsPayload {
+  success?: boolean;
+  status_code?: number;
+  message?: string;
+  data?: {
+    prodi?: string[];
+    bidangPkm?: string[];
+    dosenPendamping?: string[];
+  };
+}
 
 export async function GET() {
   try {
-    const res = await fetch(`${BASE_URL}/options`, {
+    const res = await fetch(buildAppsScriptUrl('options'), {
       cache: 'no-store',
-      signal: AbortSignal.timeout(4000),
+      redirect: 'follow',
+      signal: AbortSignal.timeout(8000),
     });
 
-    const contentType = res.headers.get('content-type') || '';
-
-    if (res.status === 468 || contentType.includes('text/html')) {
-      // Fallback to local static options if blocked by WAF challenge
+    const parsed = await parseUpstreamJson<UpstreamOptionsPayload>(res);
+    if (!parsed.ok || !parsed.data?.success) {
       return NextResponse.json({
         success: true,
         data: FALLBACK_OPTIONS,
-        source: 'fallback_waf',
-        message: 'Menggunakan master opsi cadangan (WAF challenge terdeteksi).',
+        source: 'fallback_upstream',
+        message: !parsed.ok ? parsed.error : parsed.data?.message || 'Menggunakan master opsi cadangan.',
       });
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const remoteData = parsed.data.data || {};
+    const mergedData = {
+      prodi: remoteData.prodi?.length ? remoteData.prodi : FALLBACK_OPTIONS.prodi,
+      bidangPkm: remoteData.bidangPkm?.length ? remoteData.bidangPkm : FALLBACK_OPTIONS.bidangPkm,
+      dosenPendamping: remoteData.dosenPendamping?.length
+        ? remoteData.dosenPendamping
+        : FALLBACK_OPTIONS.dosenPendamping,
+    };
+
+    return NextResponse.json(
+      {
+        ...parsed.data,
+        data: mergedData,
+      },
+      { status: parsed.data.status_code || res.status || 200 }
+    );
   } catch {
-    // Fallback to local static options if offline / connection error
     return NextResponse.json({
       success: true,
       data: FALLBACK_OPTIONS,
@@ -37,5 +56,3 @@ export async function GET() {
     });
   }
 }
-
-

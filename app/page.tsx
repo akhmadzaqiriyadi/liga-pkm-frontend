@@ -139,7 +139,7 @@ export default function LandingPage() {
                   <Button
                     data-gsap="hero-cta"
                     size="lg"
-                    className="w-full sm:w-auto h-11 px-7 text-sm font-semibold bg-[#2aa8e8] text-[#051d40] hover:bg-sky-300 shadow-md shadow-sky-500/20 transition-all hover:scale-105 active:scale-95"
+                    className="w-full sm:w-auto h-11 px-7 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#083d82] border border-sky-400/25 shadow-md shadow-[#051d40]/30 transition-all hover:scale-105 active:scale-95"
                   >
                     Daftarkan Tim Sekarang
                   </Button>
