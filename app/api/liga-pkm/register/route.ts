@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RegistrationPayloadSchema } from '@/src/schemas/registrationSchema';
+import { buildAppsScriptUrl, getBackendBaseUrl, parseUpstreamJson } from '@/lib/backendApi';
 
-const BASE_URL =
-  process.env.API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://kreanovasi.uty.ac.id/api/v1/liga-pkm';
+interface RegisterUpstreamResponse {
+  success?: boolean;
+  status_code?: number;
+  message?: string;
+  data?: Record<string, unknown>;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,36 +32,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Forward Validated Body to Upstream Backend
-    const res = await fetch(`${BASE_URL}/register`, {
+    // Include both prodiKetua and prodiketua so Apps Script header mapping works either way
+    const upstreamPayload = {
+      ...parseResult.data,
+      prodiketua: parseResult.data.prodiKetua,
+    };
+
+    // 2. Forward Validated Body to Google Apps Script (?action=register)
+    const res = await fetch(buildAppsScriptUrl('register'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(parseResult.data),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(upstreamPayload),
+      redirect: 'follow',
+      signal: AbortSignal.timeout(10000),
     });
 
-    const contentType = res.headers.get('content-type') || '';
-
-    if (res.status === 468 || contentType.includes('text/html')) {
+    const parsed = await parseUpstreamJson<RegisterUpstreamResponse>(res);
+    if (!parsed.ok) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: `Server API (${BASE_URL}) memblokir request dengan HTTP ${res.status} (SafeLine WAF).`,
+            message: `${parsed.error} (${getBackendBaseUrl()})`,
           },
         },
         { status: 502 }
       );
     }
 
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const data = parsed.data;
+    const statusCode = data?.status_code || res.status || (data?.success ? 201 : 400);
+    return NextResponse.json(data, { status: statusCode });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Kesalahan jaringan';
     return NextResponse.json(
       {
         success: false,
         error: {
-          message: `Tidak dapat terhubung ke server API (${BASE_URL}): ${msg}`,
+          message: `Tidak dapat terhubung ke server API (${getBackendBaseUrl()}): ${msg}`,
         },
       },
       { status: 502 }

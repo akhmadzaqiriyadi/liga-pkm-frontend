@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
@@ -75,7 +76,17 @@ export default function DaftarPage() {
   const [manualDosen, setManualDosen] = useState(false);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
+  const [registeredId, setRegisteredId] = useState<string | null>(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    try {
+      const savedId = window.localStorage.getItem('liga_pkm_registered_id');
+      if (savedId) setRegisteredId(savedId);
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
@@ -108,6 +119,13 @@ export default function DaftarPage() {
   const mutation = useMutation({
     mutationFn: submitRegistration,
     onSuccess: (data) => {
+      try {
+        if (data?.data?.id) {
+          window.localStorage.setItem('liga_pkm_registered_id', data.data.id);
+        }
+      } catch {
+        // ignore storage errors
+      }
       router.push(`/daftar/sukses?id=${data.data.id}`);
     },
     onError: (err: Error) => {
@@ -308,6 +326,25 @@ export default function DaftarPage() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {registeredId && (
+            <Alert className="mb-6 border-primary/25 bg-accent/60 text-foreground">
+              <AlertTitle className="font-semibold text-primary">
+                Perangkat Ini Sudah Mengirim Pendaftaran
+              </AlertTitle>
+              <AlertDescription className="text-muted-foreground">
+                ID Pendaftaran Anda: <code className="font-mono font-semibold text-foreground">{registeredId}</code>.
+                Satu mahasiswa/tim hanya diperbolehkan mendaftar 1 kali untuk mencegah data ganda.
+              </AlertDescription>
+              <AlertAction>
+                <Link href={`/cek-pendaftaran?id=${encodeURIComponent(registeredId)}`}>
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-[#083d82]">
+                    Lihat Data Saya
+                  </Button>
+                </Link>
+              </AlertAction>
+            </Alert>
+          )}
+
           <div className="grid lg:grid-cols-12 gap-8 items-start">
             {/* Main Form Column */}
             <div className="lg:col-span-8 min-w-0 space-y-6">
@@ -707,9 +744,13 @@ export default function DaftarPage() {
                   type="submit"
                   size="lg"
                   className="w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-[#083d82]"
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || Boolean(registeredId)}
                 >
-                  {mutation.isPending ? 'Mengirim Pendaftaran...' : 'Kirim Pendaftaran'}
+                  {registeredId
+                    ? 'Anda Sudah Terdaftar'
+                    : mutation.isPending
+                      ? 'Mengirim Pendaftaran...'
+                      : 'Kirim Pendaftaran'}
                 </Button>
               </div>
             </div>
@@ -788,9 +829,13 @@ export default function DaftarPage() {
                     type="submit"
                     size="lg"
                     className="hidden lg:flex w-full h-11 text-sm font-semibold bg-primary text-primary-foreground hover:bg-[#083d82]"
-                    disabled={mutation.isPending}
+                    disabled={mutation.isPending || Boolean(registeredId)}
                   >
-                    {mutation.isPending ? 'Mengirim Pendaftaran...' : 'Kirim Pendaftaran'}
+                    {registeredId
+                      ? 'Anda Sudah Terdaftar'
+                      : mutation.isPending
+                        ? 'Mengirim Pendaftaran...'
+                        : 'Kirim Pendaftaran'}
                   </Button>
 
                   <p className="text-xs text-muted-foreground leading-relaxed">
