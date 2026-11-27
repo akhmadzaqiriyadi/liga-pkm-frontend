@@ -110,9 +110,10 @@ export async function getAdminSubmissions(
   page = 1,
   search = '',
   status = '',
-  bidang = ''
+  bidang = '',
+  limit = 10
 ): Promise<SubmissionsResponse> {
-  const params = new URLSearchParams({ page: String(page), limit: '10' });
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (search) params.append('search', search);
   if (status) params.append('status', status);
   if (bidang) params.append('bidang', bidang);

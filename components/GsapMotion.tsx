@@ -125,17 +125,17 @@ export function GsapPageScope({ children, className = '' }: GsapPageScopeProps) 
         });
       });
 
-      // 4. Parallax Background on Hero
+      // 4. Parallax Background on Hero (desktop only to keep mobile scrolling light)
       const parallaxBg = root.querySelectorAll('[data-gsap="hero-parallax"]');
-      if (parallaxBg.length > 0) {
+      if (parallaxBg.length > 0 && window.innerWidth >= 768) {
         gsap.to(parallaxBg, {
-          yPercent: 20,
+          yPercent: 15,
           ease: 'none',
           scrollTrigger: {
             trigger: root.querySelector('section'),
             start: 'top top',
             end: 'bottom top',
-            scrub: true,
+            scrub: 0.5,
           },
         });
       }
@@ -269,27 +269,10 @@ export function GsapPageScope({ children, className = '' }: GsapPageScopeProps) 
         });
       }
 
-      // 11. Interactive Hover Micro-Springs for all interactive cards
+      // 11. Lightweight GPU-composited hover micro-interactions
       const interactiveCards = root.querySelectorAll<HTMLElement>('.gsap-hover-card');
       interactiveCards.forEach((card) => {
-        card.addEventListener('mouseenter', () => {
-          gsap.to(card, {
-            y: -4,
-            scale: 1.015,
-            duration: 0.28,
-            ease: 'power2.out',
-            boxShadow: '0 10px 25px -5px rgba(10, 77, 162, 0.12)',
-          });
-        });
-        card.addEventListener('mouseleave', () => {
-          gsap.to(card, {
-            y: 0,
-            scale: 1,
-            duration: 0.35,
-            ease: 'power2.out',
-            boxShadow: 'none',
-          });
-        });
+        card.classList.add('transition-transform', 'duration-200', 'hover:-translate-y-1');
       });
     }, root);
 

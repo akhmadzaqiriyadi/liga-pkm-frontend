@@ -41,8 +41,8 @@ export function HeroBannerBackground() {
         return (
           <div
             key={banner.src}
-            className={`absolute inset-0 transition-all duration-1000 ease-out ${
-              isActive ? 'opacity-50 scale-100' : 'opacity-0 scale-105'
+            className={`absolute inset-0 transition-opacity duration-1000 ease-out will-change-opacity ${
+              isActive ? 'opacity-50' : 'opacity-0'
             }`}
           >
             <Image
@@ -50,6 +50,7 @@ export function HeroBannerBackground() {
               alt={banner.alt}
               fill
               priority={idx === 0}
+              quality={75}
               sizes="100vw"
               className="object-cover object-center"
             />

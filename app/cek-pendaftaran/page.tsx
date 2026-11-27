@@ -1,8 +1,9 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
   trackRegistrationById,
   type SubmissionDetail,
@@ -19,52 +20,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 function CekPendaftaranContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialId = searchParams.get('id') || '';
-
+  const initialId = searchParams.get('id')?.trim() || '';
   const [inputId, setInputId] = useState(initialId);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [result, setResult] = useState<SubmissionDetail | null>(null);
+  const activeId = initialId;
 
-  const performLookup = useCallback(async (targetId: string) => {
-    const trimmed = targetId.trim();
-    if (!trimmed) {
-      setError('Masukkan ID pendaftaran yang Anda terima setelah mendaftar.');
-      setResult(null);
-      return;
-    }
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['trackRegistration', activeId],
+    queryFn: () => trackRegistrationById(activeId),
+    enabled: Boolean(activeId),
+    staleTime: 60 * 1000,
+    retry: false,
+  });
 
-    setLoading(true);
-    setError('');
-    try {
-      const res = await trackRegistrationById(trimmed);
-      setResult(res.data);
-    } catch (err: unknown) {
-      setResult(null);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Data pendaftaran dengan ID tersebut tidak ditemukan.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (initialId) {
-      setInputId(initialId);
-      performLookup(initialId);
-    }
-  }, [initialId, performLookup]);
+  const result = data?.data ?? null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = inputId.trim();
-    if (trimmed) {
-      router.replace(`/cek-pendaftaran?id=${encodeURIComponent(trimmed)}`);
-    }
-    performLookup(trimmed);
+    if (!trimmed) return;
+    router.replace(`/cek-pendaftaran?id=${encodeURIComponent(trimmed)}`);
   };
 
   const anggotaList = result
@@ -80,7 +60,7 @@ function CekPendaftaranContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-border bg-background/95">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <Link
             href="/"
@@ -113,7 +93,7 @@ function CekPendaftaranContent() {
           </p>
         </div>
 
-        <Card className="border-border shadow-none bg-card overflow-hidden">
+        <Card className="border-border shadow-none bg-card overflow-hidden pt-0">
           <div className="h-1 bg-gradient-to-r from-[#0a4da2] to-[#2aa8e8]" />
           <CardContent className="p-5 sm:p-6">
             <form onSubmit={handleSubmit} className="space-y-3">
@@ -129,10 +109,10 @@ function CekPendaftaranContent() {
                 />
                 <Button
                   type="submit"
-                  disabled={loading}
+                  disabled={isFetching}
                   className="h-10 px-6 bg-primary text-primary-foreground hover:bg-[#083d82] font-semibold shrink-0"
                 >
-                  {loading ? 'Mencari...' : 'Cek Pendaftaran'}
+                  {isFetching ? 'Mencari...' : 'Cek Pendaftaran'}
                 </Button>
               </div>
             </form>
@@ -142,18 +122,22 @@ function CekPendaftaranContent() {
         {error && (
           <Alert variant="destructive" className="border-rose-200 bg-rose-50 text-rose-800">
             <AlertTitle className="font-semibold">Data Tidak Ditemukan</AlertTitle>
-            <AlertDescription className="text-rose-700">{error}</AlertDescription>
+            <AlertDescription className="text-rose-700">
+              {error instanceof Error
+                ? error.message
+                : 'Data pendaftaran dengan ID tersebut tidak ditemukan.'}
+            </AlertDescription>
           </Alert>
         )}
 
-        {loading && (
+        {isLoading && (
           <div className="space-y-4">
             <Skeleton className="h-28 w-full rounded-lg" />
             <Skeleton className="h-56 w-full rounded-lg" />
           </div>
         )}
 
-        {!loading && result && (
+        {!isLoading && result && (
           <div className="space-y-6">
             {/* Status Header Card */}
             <Card className="border-border shadow-none bg-card">
@@ -167,7 +151,19 @@ function CekPendaftaranContent() {
                       {result.id}
                     </code>
                   </div>
-                  <StatusBadge status={result.status} />
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={result.status} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      disabled={isFetching}
+                      onClick={() => refetch()}
+                    >
+                      {isFetching ? 'Memuat...' : 'Segarkan'}
+                    </Button>
+                  </div>
                 </div>
 
                 {result.reviewerNotes && (
@@ -291,4 +287,3 @@ export default function CekPendaftaranPage() {
     </Suspense>
   );
 }
-
