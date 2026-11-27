@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -47,6 +47,18 @@ function RequiredMark() {
   return <span className="text-red-500 font-semibold ml-0.5">*</span>;
 }
 
+const MemoSelectItems = memo(function MemoSelectItems({ items }: { items: string[] }) {
+  return (
+    <>
+      {items.map((item) => (
+        <SelectItem key={item} value={item}>
+          {item}
+        </SelectItem>
+      ))}
+    </>
+  );
+});
+
 const SDG_OPTIONS = [
   'SDG 1: Tanpa Kemiskinan',
   'SDG 2: Tanpa Kelaparan',
@@ -76,17 +88,22 @@ export default function DaftarPage() {
   const [manualDosen, setManualDosen] = useState(false);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
-  const [registeredId, setRegisteredId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    try {
-      const savedId = window.localStorage.getItem('liga_pkm_registered_id');
-      if (savedId) setRegisteredId(savedId);
-    } catch {
-      // ignore storage errors
-    }
-  }, []);
+  const registeredId = useSyncExternalStore(
+    (onStoreChange) => {
+      window.addEventListener('storage', onStoreChange);
+      return () => window.removeEventListener('storage', onStoreChange);
+    },
+    () => {
+      try {
+        return window.localStorage.getItem('liga_pkm_registered_id');
+      } catch {
+        return null;
+      }
+    },
+    () => null
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
@@ -114,6 +131,8 @@ export default function DaftarPage() {
   } = useQuery({
     queryKey: ['ligaPKMOptions'],
     queryFn: getLigaPKMOptions,
+    staleTime: 10 * 60 * 1000,
+    placeholderData: FALLBACK_OPTIONS,
   });
 
   const mutation = useMutation({
@@ -327,22 +346,28 @@ export default function DaftarPage() {
 
         <form onSubmit={handleSubmit}>
           {registeredId && (
-            <Alert className="mb-6 border-primary/25 bg-accent/60 text-foreground">
-              <AlertTitle className="font-semibold text-primary">
-                Perangkat Ini Sudah Mengirim Pendaftaran
-              </AlertTitle>
-              <AlertDescription className="text-muted-foreground">
-                ID Pendaftaran Anda: <code className="font-mono font-semibold text-foreground">{registeredId}</code>.
-                Satu mahasiswa/tim hanya diperbolehkan mendaftar 1 kali untuk mencegah data ganda.
-              </AlertDescription>
-              <AlertAction>
-                <Link href={`/cek-pendaftaran?id=${encodeURIComponent(registeredId)}`}>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-[#083d82]">
-                    Lihat Data Saya
-                  </Button>
-                </Link>
-              </AlertAction>
-            </Alert>
+            <div className="mb-6 rounded-lg border border-primary/25 bg-accent/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1 min-w-0">
+                <p className="text-sm font-semibold text-primary">
+                  Perangkat Ini Sudah Mengirim Pendaftaran
+                </p>
+                <p className="text-xs sm:text-sm text-muted-foreground break-words">
+                  ID Pendaftaran Anda:{' '}
+                  <code className="font-mono font-semibold text-foreground break-all">
+                    {registeredId}
+                  </code>
+                  . Satu mahasiswa/tim hanya diperbolehkan mendaftar 1 kali untuk mencegah data ganda.
+                </p>
+              </div>
+              <Link
+                href={`/cek-pendaftaran?id=${encodeURIComponent(registeredId)}`}
+                className="shrink-0"
+              >
+                <Button size="sm" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-[#083d82]">
+                  Lihat Data Saya
+                </Button>
+              </Link>
+            </div>
           )}
 
           <div className="grid lg:grid-cols-12 gap-8 items-start">
@@ -376,8 +401,8 @@ export default function DaftarPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 min-w-0">
                       <Label htmlFor="namaKetua">
                         Nama Lengkap Ketua <RequiredMark />
                       </Label>
@@ -390,7 +415,7 @@ export default function DaftarPage() {
                         onChange={(e) => setField('namaKetua', e.target.value)}
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-w-0">
                       <Label htmlFor="npmKetua">
                         NPM Ketua <RequiredMark />
                       </Label>
@@ -418,8 +443,8 @@ export default function DaftarPage() {
                       )}
                     </div>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 min-w-0">
                       <Label>
                         Program Studi <RequiredMark />
                       </Label>
@@ -432,15 +457,11 @@ export default function DaftarPage() {
                           <SelectValue placeholder="Pilih Program Studi" />
                         </SelectTrigger>
                         <SelectContent>
-                          {prodiList.map((p) => (
-                            <SelectItem key={p} value={p}>
-                              {p}
-                            </SelectItem>
-                          ))}
+                          <MemoSelectItems items={prodiList} />
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-w-0">
                       <Label htmlFor="waKetua">
                         No. WhatsApp Aktif <RequiredMark />
                       </Label>
@@ -513,20 +534,20 @@ export default function DaftarPage() {
                           </button>
                         )}
                       </div>
-                      <div className="grid sm:grid-cols-3 gap-3">
-                        <div className="space-y-1.5">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                        <div className="space-y-1.5 min-w-0">
                           <Label className="text-xs">
                             Nama Lengkap{i < 3 && <RequiredMark />}
                           </Label>
                           <Input
-                            className="h-9 bg-card"
+                            className="h-10 bg-card"
                             placeholder="Nama lengkap"
                             required={i < 3}
                             value={form.anggota[i].nama}
                             onChange={(e) => setAnggota(i, 'nama', e.target.value)}
                           />
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 min-w-0">
                           <Label className="text-xs">
                             NPM{i < 3 && <RequiredMark />}
                           </Label>
@@ -534,7 +555,7 @@ export default function DaftarPage() {
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            className={`h-9 bg-card font-mono ${fieldErrors[`npmAnggota${i + 1}`] ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
+                            className={`h-10 bg-card font-mono ${fieldErrors[`npmAnggota${i + 1}`] ? 'border-rose-500 focus-visible:ring-rose-500' : ''}`}
                             placeholder="NPM (angka)"
                             required={i < 3}
                             maxLength={15}
@@ -553,7 +574,7 @@ export default function DaftarPage() {
                             </p>
                           )}
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 min-w-0">
                           <Label className="text-xs">
                             Program Studi{i < 3 && <RequiredMark />}
                           </Label>
@@ -564,15 +585,11 @@ export default function DaftarPage() {
                               setAnggota(i, 'prodi', v ?? '')
                             }
                           >
-                            <SelectTrigger className="w-full h-9 bg-card">
+                            <SelectTrigger className="w-full h-10 bg-card">
                               <SelectValue placeholder="Pilih Prodi" />
                             </SelectTrigger>
                             <SelectContent>
-                              {prodiList.map((p) => (
-                                <SelectItem key={p} value={p}>
-                                  {p}
-                                </SelectItem>
-                              ))}
+                              <MemoSelectItems items={prodiList} />
                             </SelectContent>
                           </Select>
                         </div>
@@ -618,8 +635,8 @@ export default function DaftarPage() {
                       onChange={(e) => setField('judulDiusulkan', e.target.value)}
                     />
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 min-w-0">
                       <Label>
                         Bidang PKM <RequiredMark />
                       </Label>
@@ -632,15 +649,11 @@ export default function DaftarPage() {
                           <SelectValue placeholder="Pilih Bidang PKM" />
                         </SelectTrigger>
                         <SelectContent>
-                          {bidangList.map((b) => (
-                            <SelectItem key={b} value={b}>
-                              {b}
-                            </SelectItem>
-                          ))}
+                          <MemoSelectItems items={bidangList} />
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-w-0">
                       <Label>
                         Skema SDGs <RequiredMark />
                       </Label>
@@ -653,11 +666,7 @@ export default function DaftarPage() {
                           <SelectValue placeholder="Pilih Target SDGs" />
                         </SelectTrigger>
                         <SelectContent>
-                          {SDG_OPTIONS.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
+                          <MemoSelectItems items={SDG_OPTIONS} />
                         </SelectContent>
                       </Select>
                     </div>
@@ -705,11 +714,7 @@ export default function DaftarPage() {
                           <SelectValue placeholder="Pilih Dosen Pendamping" />
                         </SelectTrigger>
                         <SelectContent>
-                          {dosenList.map((d) => (
-                            <SelectItem key={d} value={d}>
-                              {d}
-                            </SelectItem>
-                          ))}
+                          <MemoSelectItems items={dosenList} />
                           <SelectItem value={MANUAL_DOSEN_VALUE}>
                             Dosen Lainnya (Ketik Manual)
                           </SelectItem>
@@ -757,7 +762,7 @@ export default function DaftarPage() {
 
             {/* Sticky Sidebar Summary */}
             <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
-              <Card className="border-border shadow-none bg-card overflow-hidden">
+              <Card className="border-border shadow-none bg-card overflow-hidden pt-0">
                 <div className="h-1.5 bg-gradient-to-r from-[#0a4da2] to-[#2aa8e8]" />
                 <CardHeader className="pb-3 border-b border-border">
                   <CardTitle className="text-sm font-semibold text-foreground">

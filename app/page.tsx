@@ -1,4 +1,9 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
+import { getLigaPKMOptions } from '@/src/services/ligaPkmService';
 import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/BrandLogo';
 import { LandingHeader } from '@/components/LandingHeader';
@@ -100,6 +105,16 @@ const BIDANG_PKM = [
 ];
 
 export default function LandingPage() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['ligaPKMOptions'],
+      queryFn: getLigaPKMOptions,
+      staleTime: 10 * 60 * 1000,
+    });
+  }, [queryClient]);
+
   return (
     <GsapPageScope className="min-h-screen bg-background text-foreground flex flex-col">
       <LandingHeader />

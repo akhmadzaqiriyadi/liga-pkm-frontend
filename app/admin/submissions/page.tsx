@@ -1,13 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   getAdminSubmissions,
-  getSubmissionDetail,
   updateSubmissionStatus,
   type Submission,
+  type SubmissionsResponse,
 } from '@/src/services/ligaPkmService';
 import { StatusBadge } from '@/components/StatusBadge';
 import { BrandLogo } from '@/components/BrandLogo';
@@ -41,6 +46,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
+const STATUS_FILTER_LABELS: Record<string, string> = {
+  all: 'Semua Status',
+  pending: 'Menunggu',
+  reviewed: 'Ditinjau',
+  approved: 'Disetujui',
+  rejected: 'Ditolak',
+};
+
 const BIDANG_OPTIONS = [
   'Kewirausahaan',
   'Pengabdian Masyarakat',
@@ -53,6 +66,19 @@ const BIDANG_OPTIONS = [
   'Artikel Ilmiah',
   'Gagasan Futuristik Tertulis',
 ];
+
+const BidangFilterItems = memo(function BidangFilterItems() {
+  return (
+    <>
+      <SelectItem value="all">Semua Bidang</SelectItem>
+      {BIDANG_OPTIONS.map((b) => (
+        <SelectItem key={b} value={b}>
+          {b}
+        </SelectItem>
+      ))}
+    </>
+  );
+});
 
 interface SubmissionDetail extends Submission {
   skemaSdgs?: string;
@@ -74,10 +100,104 @@ interface SubmissionDetail extends Submission {
   prodiAnggota5?: string;
 }
 
+const SubmissionDesktopRow = memo(function SubmissionDesktopRow({
+  item,
+  onOpenDetail,
+}: {
+  item: Submission;
+  onOpenDetail: (item: Submission) => void;
+}) {
+  return (
+    <TableRow className="hover:bg-background/50">
+      <TableCell>
+        <div className="font-medium text-foreground">{item.namaKetua}</div>
+        <div className="font-mono text-xs text-muted-foreground">
+          {item.npmKetua}
+        </div>
+      </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {item.prodiKetua}
+      </TableCell>
+      <TableCell className="max-w-xs truncate text-sm text-foreground">
+        {item.judulDiusulkan}
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline" className="text-xs font-normal bg-background">
+          {item.bidangPkm}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <StatusBadge status={item.status} />
+      </TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+        {new Date(item.createdAt).toLocaleDateString('id-ID')}
+      </TableCell>
+      <TableCell className="text-right">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 px-3 text-xs"
+          onClick={() => onOpenDetail(item)}
+        >
+          Detail
+        </Button>
+      </TableCell>
+    </TableRow>
+  );
+});
+
+const SubmissionMobileCard = memo(function SubmissionMobileCard({
+  item,
+  onOpenDetail,
+}: {
+  item: Submission;
+  onOpenDetail: (item: Submission) => void;
+}) {
+  return (
+    <div className="p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-semibold text-foreground truncate">
+            {item.namaKetua}
+          </div>
+          <div className="font-mono text-xs text-muted-foreground">
+            {item.npmKetua} · {item.prodiKetua}
+          </div>
+        </div>
+        <StatusBadge status={item.status} />
+      </div>
+      <p className="text-sm text-foreground font-medium line-clamp-2">
+        {item.judulDiusulkan}
+      </p>
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <Badge variant="outline" className="text-xs font-normal bg-background truncate">
+            {item.bidangPkm}
+          </Badge>
+          <span className="font-mono text-xs text-muted-foreground shrink-0">
+            {new Date(item.createdAt).toLocaleDateString('id-ID')}
+          </span>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 px-3 text-xs shrink-0"
+          onClick={() => onOpenDetail(item)}
+        >
+          Detail
+        </Button>
+      </div>
+    </div>
+  );
+});
+
+const PAGE_SIZE = 10;
+
 export default function AdminSubmissionsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [bidangFilter, setBidangFilter] = useState<string>('');
@@ -85,15 +205,26 @@ export default function AdminSubmissionsPage() {
   const [reviewNotes, setReviewNotes] = useState('');
   const [newStatus, setNewStatus] = useState('');
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['submissions', page, search, statusFilter, bidangFilter],
-    queryFn: () => getAdminSubmissions(page, search, statusFilter, bidangFilter),
-  });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-  const { data: detail, isLoading: loadingDetail } = useQuery({
-    queryKey: ['submission-detail', selectedId],
-    queryFn: () => getSubmissionDetail(selectedId!),
-    enabled: !!selectedId,
+  const queryKey = useMemo(
+    () => ['submissions', page, search, statusFilter, bidangFilter] as const,
+    [page, search, statusFilter, bidangFilter]
+  );
+
+  // Fetch 10 items per page so each payload stays light; keepPreviousData prevents UI flicker
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+    queryKey,
+    queryFn: () => getAdminSubmissions(page, search, statusFilter, bidangFilter, PAGE_SIZE),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const updateMutation = useMutation({
@@ -106,37 +237,75 @@ export default function AdminSubmissionsPage() {
       status: string;
       notes: string;
     }) => updateSubmissionStatus(id, status, notes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['submissions'] });
-      queryClient.invalidateQueries({ queryKey: ['submission-detail', selectedId] });
-      setNewStatus('');
-      setReviewNotes('');
+    onSuccess: (_res, variables) => {
+      queryClient.setQueryData<SubmissionsResponse>(queryKey, (old) => {
+        if (!old?.data?.items) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            items: old.data.items.map((item) =>
+              item.id === variables.id
+                ? {
+                    ...item,
+                    status: variables.status as Submission['status'],
+                    reviewerNotes: variables.notes,
+                  }
+                : item
+            ),
+          },
+        };
+      });
     },
   });
 
-  const items = data?.data?.items ?? [];
-  const totalPages = data?.data?.totalPages ?? 1;
+  const items = useMemo(() => data?.data?.items ?? [], [data]);
   const total = data?.data?.total ?? 0;
+  const totalPages = Math.max(1, data?.data?.totalPages ?? 1);
+  const safePage = Math.min(page, totalPages);
 
-  const pendingCount = items.filter((i) => i.status === 'pending').length;
-  const reviewedCount = items.filter((i) => i.status === 'reviewed').length;
-  const approvedCount = items.filter((i) => i.status === 'approved').length;
+  // Prefetch next page in background so pagination feels instant
+  useEffect(() => {
+    if (safePage < totalPages) {
+      const nextPage = safePage + 1;
+      queryClient.prefetchQuery({
+        queryKey: ['submissions', nextPage, search, statusFilter, bidangFilter],
+        queryFn: () => getAdminSubmissions(nextPage, search, statusFilter, bidangFilter, PAGE_SIZE),
+        staleTime: 60 * 1000,
+      });
+    }
+  }, [safePage, totalPages, search, statusFilter, bidangFilter, queryClient]);
 
-  const hasActiveFilters = Boolean(search || statusFilter || bidangFilter);
+  const pendingCount = useMemo(
+    () => items.filter((i) => i.status === 'pending').length,
+    [items]
+  );
+  const reviewedCount = useMemo(
+    () => items.filter((i) => i.status === 'reviewed').length,
+    [items]
+  );
+  const approvedCount = useMemo(
+    () => items.filter((i) => i.status === 'approved').length,
+    [items]
+  );
+
+  const hasActiveFilters = Boolean(searchInput || search || statusFilter || bidangFilter);
 
   const handleResetFilters = () => {
+    setSearchInput('');
     setSearch('');
     setStatusFilter('');
     setBidangFilter('');
     setPage(1);
   };
 
-  const handleOpenDetail = (item: Submission) => {
+  const resetUpdateMutation = updateMutation.reset;
+  const handleOpenDetail = useCallback((item: Submission) => {
     setSelectedId(item.id);
     setNewStatus(item.status);
     setReviewNotes(item.reviewerNotes ?? '');
-    updateMutation.reset();
-  };
+    resetUpdateMutation();
+  }, [resetUpdateMutation]);
 
   const handleLogout = async () => {
     await fetch('/api/admin/auth', { method: 'DELETE' });
@@ -144,7 +313,13 @@ export default function AdminSubmissionsPage() {
     router.refresh();
   };
 
-  const detailData: SubmissionDetail | undefined = detail?.data;
+  const detailData: SubmissionDetail | undefined = useMemo(
+    () =>
+      selectedId
+        ? (items.find((i) => i.id === selectedId) as SubmissionDetail | undefined)
+        : undefined,
+    [items, selectedId]
+  );
   const anggotaList = detailData
     ? [
       { nama: detailData.namaAnggota1, npm: detailData.npmAnggota1, prodi: detailData.prodiAnggota1 },
@@ -158,7 +333,7 @@ export default function AdminSubmissionsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top Admin Header */}
-      <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-border bg-background/95">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <BrandLogo size={36} />
@@ -172,6 +347,16 @@ export default function AdminSubmissionsPage() {
                     </div>
                 </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm bg-card"
+                      disabled={isFetching}
+                      onClick={() => refetch()}
+                    >
+                      {isFetching ? 'Memuat...' : 'Muat Ulang'}
+                    </Button>
                     <a href="/api/admin/export" download="rekap-liga-pkm.csv">
                         <Button variant="outline" size="sm" className="h-9 px-2.5 sm:px-3.5 text-xs sm:text-sm bg-card">
                           Export CSV
@@ -230,21 +415,21 @@ export default function AdminSubmissionsPage() {
                 </div>
 
                 {/* Filters */}
-                <Card className="border-border shadow-none bg-card">
+                <Card className="border-border shadow-none bg-card py-0">
                   <CardContent className="p-4">
-                    <div className="grid md:grid-cols-12 gap-3 items-center">
-                      <div className="md:col-span-5">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                      <div className="md:col-span-5 min-w-0">
                         <Input
                           className="h-10 bg-background"
                           placeholder="Cari nama ketua, NPM, judul, atau dosen..."
-                          value={search}
+                          value={searchInput}
                           onChange={(e) => {
-                            setSearch(e.target.value);
+                            setSearchInput(e.target.value);
                             setPage(1);
                           }}
                         />
                       </div>
-                      <div className="md:col-span-3">
+                      <div className="md:col-span-3 min-w-0">
                         <Select
                           value={statusFilter || 'all'}
                           onValueChange={(v: string | null) => {
@@ -253,7 +438,9 @@ export default function AdminSubmissionsPage() {
                           }}
                         >
                           <SelectTrigger className="w-full h-10 bg-background">
-                            <SelectValue placeholder="Semua Status" />
+                            <SelectValue placeholder="Semua Status">
+                              {STATUS_FILTER_LABELS[statusFilter || 'all']}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">Semua Status</SelectItem>
@@ -264,7 +451,7 @@ export default function AdminSubmissionsPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="md:col-span-4 flex gap-2">
+                      <div className="md:col-span-4 min-w-0 flex gap-2">
                         <Select
                           value={bidangFilter || 'all'}
                           onValueChange={(v: string | null) => {
@@ -273,15 +460,12 @@ export default function AdminSubmissionsPage() {
                           }}
                         >
                           <SelectTrigger className="w-full h-10 bg-background">
-                            <SelectValue placeholder="Semua Bidang PKM" />
+                            <SelectValue placeholder="Semua Bidang">
+                              {bidangFilter || 'Semua Bidang'}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">Semua Bidang</SelectItem>
-                            {BIDANG_OPTIONS.map((b) => (
-                              <SelectItem key={b} value={b}>
-                                {b}
-                              </SelectItem>
-                            ))}
+                            <BidangFilterItems />
                           </SelectContent>
                         </Select>
                         {hasActiveFilters && (
@@ -300,7 +484,7 @@ export default function AdminSubmissionsPage() {
                 </Card>
 
                 {/* Table / Error / Loading */}
-                <Card className="border-border shadow-none overflow-hidden bg-card">
+                <Card className="border-border shadow-none overflow-hidden bg-card py-0">
                   <CardContent className="p-0">
                     {isError ? (
                       <div className="p-10 text-center space-y-3">
@@ -333,40 +517,11 @@ export default function AdminSubmissionsPage() {
                                           </div>
                                         ) : (
                                           items.map((item: Submission) => (
-                                            <div key={item.id} className="p-4 space-y-3">
-                                              <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                  <div className="font-semibold text-foreground truncate">
-                                                    {item.namaKetua}
-                                                  </div>
-                                                  <div className="font-mono text-xs text-muted-foreground">
-                                                    {item.npmKetua} · {item.prodiKetua}
-                                                  </div>
-                                                  </div>
-                                                  <StatusBadge status={item.status} />
-                                              </div>
-                                              <p className="text-sm text-foreground font-medium line-clamp-2">
-                                                {item.judulDiusulkan}
-                                              </p>
-                                              <div className="flex items-center justify-between gap-2 pt-1">
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                  <Badge variant="outline" className="text-xs font-normal bg-background truncate">
-                                                    {item.bidangPkm}
-                                                  </Badge>
-                                                  <span className="font-mono text-xs text-muted-foreground shrink-0">
-                                                    {new Date(item.createdAt).toLocaleDateString('id-ID')}
-                                                  </span>
-                                                </div>
-                                                <Button
-                                                  size="sm"
-                                                  variant="outline"
-                                                  className="h-8 px-3 text-xs shrink-0"
-                                                  onClick={() => handleOpenDetail(item)}
-                                                >
-                                                  Detail
-                                                </Button>
-                                              </div>
-                                            </div>
+                                            <SubmissionMobileCard
+                                              key={item.id}
+                                              item={item}
+                                              onOpenDetail={handleOpenDetail}
+                                            />
                                           ))
                                         )}
                                       </div>
@@ -396,41 +551,11 @@ export default function AdminSubmissionsPage() {
                                               </TableRow>
                                       ) : (
                         items.map((item: Submission) => (
-                                      <TableRow key={item.id} className="hover:bg-background/50">
-                                        <TableCell>
-                                          <div className="font-medium text-foreground">{item.namaKetua}</div>
-                                          <div className="font-mono text-xs text-muted-foreground">
-                                            {item.npmKetua}
-                                          </div>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
-                                          {item.prodiKetua}
-                                        </TableCell>
-                                        <TableCell className="max-w-xs truncate text-sm text-foreground">
-                                          {item.judulDiusulkan}
-                                        </TableCell>
-                                        <TableCell>
-                                          <Badge variant="outline" className="text-xs font-normal bg-background">
-                                            {item.bidangPkm}
-                                          </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                          <StatusBadge status={item.status} />
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                                          {new Date(item.createdAt).toLocaleDateString('id-ID')}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-8 px-3 text-xs"
-                                            onClick={() => handleOpenDetail(item)}
-                                          >
-                                            Detail
-                                          </Button>
-                                        </TableCell>
-                                      </TableRow>
+                                      <SubmissionDesktopRow
+                                        key={item.id}
+                                        item={item}
+                                        onOpenDetail={handleOpenDetail}
+                                      />
                                       ))
                       )}
                                     </TableBody>
@@ -444,7 +569,7 @@ export default function AdminSubmissionsPage() {
         {/* Pagination */}
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-sm">
                       <span className="text-muted-foreground">
-                        Halaman <strong className="font-mono text-foreground">{page}</strong> dari{' '}
+                        Halaman <strong className="font-mono text-foreground">{safePage}</strong> dari{' '}
                         <strong className="font-mono text-foreground">{totalPages}</strong>
                       </span>
                       <div className="flex gap-2">
@@ -452,8 +577,8 @@ export default function AdminSubmissionsPage() {
                           variant="outline"
                           size="sm"
                           className="bg-card"
-                          disabled={page <= 1}
-                          onClick={() => setPage((p) => p - 1)}
+                          disabled={safePage <= 1}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
                         >
                           Sebelumnya
                         </Button>
@@ -461,8 +586,8 @@ export default function AdminSubmissionsPage() {
                           variant="outline"
                           size="sm"
                           className="bg-card"
-                          disabled={page >= totalPages}
-                          onClick={() => setPage((p) => p + 1)}
+                          disabled={safePage >= totalPages}
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                         >
                           Selanjutnya
                         </Button>
@@ -473,7 +598,9 @@ export default function AdminSubmissionsPage() {
                     <Dialog
                       open={!!selectedId}
                       onOpenChange={(open) => {
-                        if (!open) setSelectedId(null);
+                        if (!open) {
+                          setSelectedId(null);
+                        }
                       }}
                     >
                         <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-card">
@@ -483,13 +610,7 @@ export default function AdminSubmissionsPage() {
                             </DialogTitle>
                           </DialogHeader>
 
-                          {loadingDetail ? (
-                            <div className="space-y-3 py-2">
-                              {[...Array(5)].map((_, i) => (
-                                <Skeleton key={i} className="h-10 w-full" />
-                              ))}
-                            </div>
-                          ) : detailData ? (
+                          {detailData ? (
                             <div className="space-y-4 text-sm pt-1">
                               <div className="flex flex-wrap items-center justify-between gap-2 bg-background border border-border rounded-lg px-4 py-3">
                                 <div>
@@ -615,13 +736,15 @@ export default function AdminSubmissionsPage() {
                                       onValueChange={(v: string | null) => setNewStatus(v ?? '')}
                                     >
                                       <SelectTrigger className="w-full h-10 bg-background">
-                                        <SelectValue placeholder="Pilih status baru" />
+                                        <SelectValue placeholder="Pilih status baru">
+                                          {newStatus ? STATUS_FILTER_LABELS[newStatus] : 'Pilih status baru'}
+                                        </SelectValue>
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="pending">Menunggu (Pending)</SelectItem>
-                                        <SelectItem value="reviewed">Ditinjau (Reviewed)</SelectItem>
-                                        <SelectItem value="approved">Disetujui (Approved)</SelectItem>
-                                        <SelectItem value="rejected">Ditolak (Rejected)</SelectItem>
+                                        <SelectItem value="pending">Menunggu</SelectItem>
+                                        <SelectItem value="reviewed">Ditinjau</SelectItem>
+                                        <SelectItem value="approved">Disetujui</SelectItem>
+                                        <SelectItem value="rejected">Ditolak</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>

@@ -27,6 +27,8 @@ export default function RootLayout({
         defaultOptions: {
           queries: {
             staleTime: 60 * 1000,
+            gcTime: 10 * 60 * 1000,
+            refetchOnWindowFocus: false,
             retry: 1,
           },
         },
@@ -38,7 +40,9 @@ export default function RootLayout({
       <body className="antialiased min-h-screen bg-background text-foreground">
         <QueryClientProvider client={queryClient}>
           {children}
-          <ReactQueryDevtools initialIsOpen={false} />
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
         </QueryClientProvider>
       </body>
     </html>

@@ -13,7 +13,7 @@ export default async function SuksesPage({
 
   return (
     <main className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg border-border shadow-xs overflow-hidden bg-card">
+      <Card className="w-full max-w-lg border-border shadow-xs overflow-hidden pt-0 bg-card">
         <div className="h-1.5 bg-gradient-to-r from-[#0a4da2] to-[#2aa8e8]" />
         <CardContent className="p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3 pb-2 border-b border-border">

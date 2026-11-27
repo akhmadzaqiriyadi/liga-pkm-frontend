@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,10 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    router.prefetch('/admin/submissions');
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -42,7 +46,6 @@ export default function AdminLoginPage() {
       }
 
       router.push('/admin/submissions');
-      router.refresh();
     } catch {
       setError('Terjadi kesalahan koneksi ke server');
     } finally {
@@ -53,7 +56,7 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
-        <Card className="border-border shadow-xs overflow-hidden bg-card">
+        <Card className="border-border shadow-xs overflow-hidden pt-0 bg-card">
           <div className="h-1.5 bg-gradient-to-r from-[#0a4da2] to-[#2aa8e8]" />
           <CardHeader className="space-y-2 pb-4">
             <div className="flex items-center gap-3">
